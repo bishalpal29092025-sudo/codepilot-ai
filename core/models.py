@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, List
 
 from pydantic import BaseModel, Field
@@ -7,6 +8,7 @@ from pydantic import BaseModel, Field
 # Repository Models
 # ============================================================
 
+
 class RepositoryInfo(BaseModel):
     """
     Metadata about the repository discovered during exploration.
@@ -14,38 +16,39 @@ class RepositoryInfo(BaseModel):
 
     language: str = Field(
         default="Unknown",
-        description="Primary programming language."
+        description="Primary programming language.",
     )
 
     framework: str = Field(
         default="Unknown",
-        description="Detected framework."
+        description="Detected framework.",
     )
 
     database: str = Field(
         default="Unknown",
-        description="Detected database."
+        description="Detected database.",
     )
 
     package_manager: str = Field(
         default="Unknown",
-        description="Detected package manager."
+        description="Detected package manager.",
     )
 
     files: List[str] = Field(
         default_factory=list,
-        description="Important repository files."
+        description="Important repository files.",
     )
 
     total_files: int = Field(
         default=0,
-        description="Total number of scanned files."
+        description="Total number of scanned files.",
     )
 
 
 # ============================================================
 # Planner Models
 # ============================================================
+
 
 class Plan(BaseModel):
     """
@@ -54,27 +57,27 @@ class Plan(BaseModel):
 
     goal: str = Field(
         ...,
-        description="Overall implementation goal."
+        description="Overall implementation goal.",
     )
 
     relevant_files: List[str] = Field(
         default_factory=list,
-        description="Files that should be read or modified."
+        description="Files that should be read or modified.",
     )
 
     implementation_steps: List[str] = Field(
         default_factory=list,
-        description="Implementation steps."
+        description="Implementation steps.",
     )
 
     risks: List[str] = Field(
         default_factory=list,
-        description="Potential implementation risks."
+        description="Potential implementation risks.",
     )
 
     testing: List[str] = Field(
         default_factory=list,
-        description="Testing checklist."
+        description="Testing checklist.",
     )
 
 
@@ -82,35 +85,37 @@ class Plan(BaseModel):
 # Reader Models
 # ============================================================
 
+
 class RepositoryContext(BaseModel):
     """
-   Source code loaded from the repository.
+    Source code loaded from the repository.
     """
 
     files: Dict[str, str] = Field(
         default_factory=dict,
-        description="Mapping of file path to file contents."
+        description="Mapping of file path to file contents.",
     )
 
     loaded_files: List[str] = Field(
         default_factory=list,
-        description="Successfully loaded files."
+        description="Successfully loaded files.",
     )
 
     missing_files: List[str] = Field(
         default_factory=list,
-        description="Files requested by the planner but not found."
+        description="Files requested by the planner but not found.",
     )
 
     skipped_files: List[str] = Field(
         default_factory=list,
-        description="Binary, unreadable or oversized files."
+        description="Binary, unreadable or oversized files.",
     )
 
 
 # ============================================================
 # Coder Models
 # ============================================================
+
 
 class GeneratedFile(BaseModel):
     """
@@ -119,12 +124,12 @@ class GeneratedFile(BaseModel):
 
     path: str = Field(
         ...,
-        description="Repository-relative file path."
+        description="Repository-relative file path.",
     )
 
     content: str = Field(
         ...,
-        description="Complete updated file content."
+        description="Complete updated file content.",
     )
 
 
@@ -135,13 +140,14 @@ class CodeResponse(BaseModel):
 
     files: List[GeneratedFile] = Field(
         default_factory=list,
-        description="Files generated or modified."
+        description="Files generated or modified.",
     )
 
 
 # ============================================================
 # Executor Models
 # ============================================================
+
 
 class ExecutionResult(BaseModel):
     """
@@ -150,18 +156,19 @@ class ExecutionResult(BaseModel):
 
     written_files: List[str] = Field(
         default_factory=list,
-        description="Files successfully written."
+        description="Files successfully written.",
     )
 
     failed_files: List[str] = Field(
         default_factory=list,
-        description="Files that failed to write."
+        description="Files that failed to write.",
     )
 
 
 # ============================================================
 # Summarizer Models
 # ============================================================
+
 
 class Summary(BaseModel):
     """
@@ -170,28 +177,29 @@ class Summary(BaseModel):
 
     files_changed: List[str] = Field(
         default_factory=list,
-        description="Files modified during execution."
+        description="Files modified during execution.",
     )
 
     features_added: List[str] = Field(
         default_factory=list,
-        description="Features implemented."
+        description="Features implemented.",
     )
 
     testing: List[str] = Field(
         default_factory=list,
-        description="Recommended testing steps."
+        description="Recommended testing steps.",
     )
 
     notes: List[str] = Field(
         default_factory=list,
-        description="Additional implementation notes."
+        description="Additional implementation notes.",
     )
 
 
 # ============================================================
 # Verification Models
 # ============================================================
+
 
 class DependencyReport(BaseModel):
     """
@@ -200,42 +208,42 @@ class DependencyReport(BaseModel):
 
     language: str = Field(
         default="Unknown",
-        description="Detected programming language."
+        description="Detected programming language.",
     )
 
     framework: str = Field(
         default="Unknown",
-        description="Detected application framework."
+        description="Detected application framework.",
     )
 
     package_manager: str = Field(
         default="Unknown",
-        description="Detected package manager."
+        description="Detected package manager.",
     )
 
     install_command: str | None = Field(
         default=None,
-        description="Command used to install project dependencies."
+        description="Command used to install project dependencies.",
     )
 
     build_command: str | None = Field(
         default=None,
-        description="Command used to build the project."
+        description="Command used to build the project.",
     )
 
     run_command: str | None = Field(
         default=None,
-        description="Command used to start the project."
+        description="Command used to start the project.",
     )
 
     detected_files: List[str] = Field(
         default_factory=list,
-        description="Configuration files used during detection."
+        description="Configuration files used during detection.",
     )
 
     warnings: List[str] = Field(
         default_factory=list,
-        description="Repository warnings."
+        description="Repository warnings.",
     )
 
 
@@ -250,32 +258,48 @@ class BuildResult(BaseModel):
 
     exit_code: int = 0
 
+    duration: float = 0.0
+
     logs: str = ""
 
     errors: List[str] = Field(
-        default_factory=list
+        default_factory=list,
     )
 
 
 class RuntimeResult(BaseModel):
     """
-    Result of running the application.
+    Result of starting the application.
     """
 
     success: bool = False
 
     command: str = ""
 
+    duration: float = 0.0
+
     logs: str = ""
 
     errors: List[str] = Field(
-        default_factory=list
+        default_factory=list,
     )
+
+
+class DiscoveredRoute(BaseModel):
+    """
+    Route discovered before API testing.
+    """
+
+    method: str
+
+    path: str
+
+    source_file: str
 
 
 class ApiEndpoint(BaseModel):
     """
-    A discovered API endpoint.
+    Result of testing a single API endpoint.
     """
 
     method: str
@@ -284,7 +308,11 @@ class ApiEndpoint(BaseModel):
 
     status_code: int | None = None
 
+    response_time: float | None = None
+
     passed: bool = False
+
+    error: str | None = None
 
 
 class ApiTestResult(BaseModel):
@@ -298,8 +326,10 @@ class ApiTestResult(BaseModel):
 
     failed: int = 0
 
+    duration: float = 0.0
+
     endpoints: List[ApiEndpoint] = Field(
-        default_factory=list
+        default_factory=list,
     )
 
 
@@ -311,11 +341,11 @@ class RootCause(BaseModel):
     summary: str = ""
 
     probable_causes: List[str] = Field(
-        default_factory=list
+        default_factory=list,
     )
 
     suggested_fixes: List[str] = Field(
-        default_factory=list
+        default_factory=list,
     )
 
     confidence: float = 0.0
@@ -325,6 +355,10 @@ class EngineeringReport(BaseModel):
     """
     Final engineering report produced after the entire pipeline.
     """
+
+    generated_at: datetime = Field(
+        default_factory=datetime.utcnow,
+    )
 
     repository: RepositoryInfo | None = None
 

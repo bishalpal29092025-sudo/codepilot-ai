@@ -8,8 +8,9 @@ from core.planner import Planner
 from core.reader import RepositoryReader
 from core.summarizer import Summarizer
 
-from verification.dependency_checker import DependencyChecker
 from verification.build_validator import BuildValidator
+from verification.dependency_checker import DependencyChecker
+from verification.runtime_validator import RuntimeValidator
 
 
 class CodePilotAgent:
@@ -20,76 +21,107 @@ class CodePilotAgent:
     def __init__(self, repository_path: str):
         self.repository_path = repository_path
 
-        # ============================
+        # ======================================================
         # Core Pipeline
-        # ============================
+        # ======================================================
 
         self.explorer = RepositoryExplorer(repository_path)
+
         self.dependency_checker = DependencyChecker(repository_path)
+
         self.planner = Planner()
+
         self.reader = RepositoryReader(repository_path)
+
         self.coder = CodeGenerator()
+
         self.executor = CodeExecutor(repository_path)
+
+        # ======================================================
+        # Verification Pipeline
+        # ======================================================
+
         self.build_validator = BuildValidator(repository_path)
+
+        self.runtime_validator = RuntimeValidator(repository_path)
+
+        # ======================================================
+        # Final Summary
+        # ======================================================
+
         self.summarizer = Summarizer()
 
-    def run(self, user_request: str) -> AgentContext:
+    # ==========================================================
+    # Public API
+    # ==========================================================
+
+    def run(
+        self,
+        user_request: str,
+    ) -> AgentContext:
         """
-        Execute the complete CodePilot pipeline.
+        Execute the complete CodePilot AI pipeline.
         """
 
         context = AgentContext(
             user_request=user_request,
         )
 
-        # =====================================
+        # ======================================================
         # Repository Analysis
-        # =====================================
+        # ======================================================
 
         context = self.explorer.run(context)
 
         context = self.dependency_checker.run(context)
 
-        # =====================================
+        # ======================================================
         # Planning
-        # =====================================
+        # ======================================================
 
         context = self.planner.run(context)
 
-        # =====================================
+        # ======================================================
         # Repository Understanding
-        # =====================================
+        # ======================================================
 
         context = self.reader.run(context)
 
-        # =====================================
+        # ======================================================
         # Code Generation
-        # =====================================
+        # ======================================================
 
         context = self.coder.run(context)
 
-        # =====================================
+        # ======================================================
         # File Execution
-        # =====================================
+        # ======================================================
 
         context = self.executor.run(context)
 
-        # =====================================
+        # ======================================================
         # Verification
-        # =====================================
+        # ======================================================
 
         context = self.build_validator.run(context)
 
-        # =====================================
-        # Summary
-        # =====================================
+        context = self.runtime_validator.run(context)
+
+        # ======================================================
+        # Final Summary
+        # ======================================================
 
         context = self.summarizer.run(context)
 
         return context
 
 
+# ==============================================================
+# CLI
+# ==============================================================
+
 def main() -> None:
+
     print("=" * 80)
     print("🚀 CodePilot AI")
     print("=" * 80)
@@ -99,36 +131,86 @@ def main() -> None:
     agent = CodePilotAgent(DEFAULT_REPOSITORY)
 
     try:
+
         context = agent.run(user_request)
 
         print("\n" + "=" * 80)
         print("✅ CodePilot AI Finished Successfully")
         print("=" * 80)
 
-        if context.summary:
-            print("\n📋 Summary")
-            print("-" * 80)
-            print(context.summary)
+        # ======================================================
+        # Build Result
+        # ======================================================
 
         if context.build_result:
+
             print("\n🔨 Build Result")
             print("-" * 80)
-            print(f"Success   : {context.build_result.success}")
-            print(f"Command   : {context.build_result.command}")
-            print(f"Exit Code : {context.build_result.exit_code}")
+
+            print(
+                f"Success    : {context.build_result.success}"
+            )
+
+            print(
+                f"Command    : {context.build_result.command}"
+            )
+
+            print(
+                f"Exit Code  : {context.build_result.exit_code}"
+            )
 
             if context.build_result.errors:
+
                 print("\nErrors:")
+
                 for error in context.build_result.errors:
-                    print(f"  • {error}")
+                    print(f" • {error}")
+
+        # ======================================================
+        # Runtime Result
+        # ======================================================
+
+        if context.runtime_result:
+
+            print("\n🚀 Runtime Result")
+            print("-" * 80)
+
+            print(
+                f"Success : {context.runtime_result.success}"
+            )
+
+            print(
+                f"Command : {context.runtime_result.command}"
+            )
+
+            if context.runtime_result.errors:
+
+                print("\nErrors:")
+
+                for error in context.runtime_result.errors:
+                    print(f" • {error}")
+
+        # ======================================================
+        # Summary
+        # ======================================================
+
+        if context.summary:
+
+            print("\n📋 Summary")
+            print("-" * 80)
+
+            print(context.summary)
 
     except KeyboardInterrupt:
+
         print("\n\n⚠️ Pipeline interrupted by user.")
 
     except Exception as e:
+
         print("\n" + "=" * 80)
         print("❌ Pipeline Failed")
         print("=" * 80)
+
         print(f"{type(e).__name__}: {e}")
 
 
