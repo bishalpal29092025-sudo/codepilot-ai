@@ -12,17 +12,37 @@ ProjectAnalysis
         │
         ▼
 ProjectPlan
+        │
+        ▼
+GenerationContext
 
-The planning engine transforms a user's engineering request into a structured
-implementation plan that downstream components (generation, verification,
-execution, reporting) can consume.
+The planning engine transforms a user's engineering request into a
+structured implementation plan consumed by generation, verification,
+execution, and reporting stages.
 """
 
 from __future__ import annotations
 
-from enum import Enum
+from enum import StrEnum
+from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+# ============================================================================
+# Base Model
+# ============================================================================
+
+
+class ImmutableModel(BaseModel):
+    """
+    Base model for immutable planning domain objects.
+    """
+
+    model_config = ConfigDict(
+        frozen=True,
+        extra="forbid",
+    )
 
 
 # ============================================================================
@@ -30,8 +50,10 @@ from pydantic import BaseModel, Field
 # ============================================================================
 
 
-class Priority(str, Enum):
-    """Task priority."""
+class Priority(StrEnum):
+    """
+    Task priority levels.
+    """
 
     LOW = "low"
     MEDIUM = "medium"
@@ -39,8 +61,10 @@ class Priority(str, Enum):
     CRITICAL = "critical"
 
 
-class Severity(str, Enum):
-    """Risk severity."""
+class Severity(StrEnum):
+    """
+    Risk severity levels.
+    """
 
     LOW = "low"
     MEDIUM = "medium"
@@ -48,8 +72,10 @@ class Severity(str, Enum):
     CRITICAL = "critical"
 
 
-class Complexity(str, Enum):
-    """Estimated implementation complexity."""
+class Complexity(StrEnum):
+    """
+    Implementation complexity.
+    """
 
     LOW = "low"
     MEDIUM = "medium"
@@ -57,8 +83,10 @@ class Complexity(str, Enum):
     VERY_HIGH = "very_high"
 
 
-class TaskCategory(str, Enum):
-    """Engineering task categories."""
+class TaskCategory(StrEnum):
+    """
+    Engineering task categories.
+    """
 
     DEPENDENCY = "dependency"
     IMPLEMENTATION = "implementation"
@@ -73,7 +101,7 @@ class TaskCategory(str, Enum):
 # ============================================================================
 
 
-class ProjectRequest(BaseModel):
+class ProjectRequest(ImmutableModel):
     """
     Represents a user's engineering request.
     """
@@ -95,13 +123,13 @@ class ProjectRequest(BaseModel):
 # ============================================================================
 
 
-class ProjectAnalysis(BaseModel):
+class ProjectAnalysis(ImmutableModel):
     """
     Represents the planner's understanding of the repository.
     """
 
     project_type: str = Field(
-        default="Unknown",
+        default="unknown",
         description="Detected project type.",
     )
 
@@ -112,12 +140,12 @@ class ProjectAnalysis(BaseModel):
 
     missing_features: list[str] = Field(
         default_factory=list,
-        description="Features required to satisfy the request.",
+        description="Required missing capabilities.",
     )
 
     affected_files: list[str] = Field(
         default_factory=list,
-        description="Files likely to require modification.",
+        description="Files likely affected.",
     )
 
     assumptions: list[str] = Field(
@@ -127,13 +155,13 @@ class ProjectAnalysis(BaseModel):
 
 
 # ============================================================================
-# Planning Models
+# Task Models
 # ============================================================================
 
 
-class Task(BaseModel):
+class Task(ImmutableModel):
     """
-    Represents a single engineering task.
+    Represents a single engineering implementation task.
     """
 
     id: str = Field(
@@ -143,7 +171,7 @@ class Task(BaseModel):
 
     title: str = Field(
         ...,
-        description="Short task title.",
+        description="Task title.",
     )
 
     description: str = Field(
@@ -163,7 +191,7 @@ class Task(BaseModel):
 
     complexity: Complexity = Field(
         default=Complexity.MEDIUM,
-        description="Estimated implementation complexity.",
+        description="Implementation complexity.",
     )
 
     affected_files: list[str] = Field(
@@ -178,11 +206,16 @@ class Task(BaseModel):
 
     acceptance_criteria: list[str] = Field(
         default_factory=list,
-        description="Acceptance criteria for task completion.",
+        description="Task completion criteria.",
     )
 
 
-class Risk(BaseModel):
+# ============================================================================
+# Risk Models
+# ============================================================================
+
+
+class Risk(ImmutableModel):
     """
     Represents an implementation risk.
     """
@@ -194,7 +227,7 @@ class Risk(BaseModel):
 
     description: str = Field(
         ...,
-        description="Detailed description of the risk.",
+        description="Risk description.",
     )
 
     severity: Severity = Field(
@@ -204,23 +237,65 @@ class Risk(BaseModel):
 
     mitigation: str | None = Field(
         default=None,
-        description="Recommended mitigation strategy.",
+        description="Risk mitigation strategy.",
     )
 
 
-class ProjectPlan(BaseModel):
+# ============================================================================
+# Project Plan
+# ============================================================================
+
+
+class ProjectPlan(ImmutableModel):
     """
-    Final implementation plan produced by the planning engine.
+    Complete implementation blueprint produced by the planning engine.
+
+    This model is the handoff contract between Planning and Generation.
     """
+
+    name: str = Field(
+        default="Unnamed Project",
+        description="Project name.",
+    )
 
     summary: str = Field(
         ...,
         description="High-level implementation summary.",
     )
 
+    objective: str = Field(
+        default="",
+        description="Primary project objective.",
+    )
+
+    architecture: str = Field(
+        default="",
+        description="Architecture overview.",
+    )
+
+    coding_standards: list[str] = Field(
+        default_factory=list,
+        description="Coding standards to follow.",
+    )
+
+    constraints: list[str] = Field(
+        default_factory=list,
+        description="Implementation constraints.",
+    )
+
+    assumptions: list[str] = Field(
+        default_factory=list,
+        description="Planning assumptions.",
+    )
+
+    relevant_files: list[str] = Field(
+        default_factory=list,
+        description="Important files for implementation.",
+    )
+
     tasks: list[Task] = Field(
         default_factory=list,
-        description="Engineering tasks.",
+        description="Implementation tasks.",
     )
 
     risks: list[Risk] = Field(
@@ -230,12 +305,18 @@ class ProjectPlan(BaseModel):
 
     testing: list[str] = Field(
         default_factory=list,
-        description="Testing checklist.",
+        description="Testing strategy/checklist.",
+    )
+
+    metadata: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Additional planning metadata.",
     )
 
 
 # ============================================================================
 # Backward Compatibility
 # ============================================================================
+
 
 Plan = ProjectPlan
