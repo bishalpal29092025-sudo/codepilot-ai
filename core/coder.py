@@ -1,66 +1,76 @@
 from pathlib import Path
 
-from core.models import (
-    CodeResponse,
-    Plan,
-    RepositoryContext,
-)
+from core.context import AgentContext
+from core.models import CodeResponse
 from llm import llm
+
+PROMPT_PATH = Path("prompts/coder.txt")
 
 
 class CodeGenerator:
     """
-    Generates code modifications using the LLM.
+    Generates code modifications using the implementation plan
+    and repository context.
+
+    Responsibilities:
+        - Build the coding prompt
+        - Call the LLM
+        - Validate the generated response
+        - Store the generated code in AgentContext
+
+    It does NOT:
+        - Write files
+        - Execute commands
+        - Build the project
+        - Summarize results
     """
 
-    def __init__(self):
-
-        prompt_path = Path("prompts/coder.txt")
-
-        self.system_prompt = prompt_path.read_text(
+    def __init__(self) -> None:
+        self.system_prompt = PROMPT_PATH.read_text(
             encoding="utf-8"
         )
 
-    # -------------------------------------------------
-    # Generate Code
-    # -------------------------------------------------
+    # ==========================================================
+    # Public API
+    # ==========================================================
 
-    def generate(
-        self,
-        plan: Plan,
-        repository: RepositoryContext,
-    ) -> CodeResponse:
+    def run(self, context: AgentContext) -> AgentContext:
+        """
+        Generate code changes from the implementation plan.
 
-        print("\n" + "=" * 70)
-        print("💻 Code Generator")
-        print("=" * 70)
+        Args:
+            context: Shared AgentContext
 
-        user_prompt = self._build_prompt(
-            plan,
-            repository,
-        )
+        Returns:
+            Updated AgentContext containing CodeResponse.
+        """
 
-        response = llm.chat_json(
-            system_prompt=self.system_prompt,
-            user_prompt=user_prompt,
-            temperature=0.1,
-        )
+        self._print_header()
 
-        code = CodeResponse.model_validate(response)
+        prompt = self._build_prompt(context)
 
-        print(f"✅ Generated {len(code.files)} file(s).")
+        response = self._generate_code(prompt)
 
-        return code
+        context.code_response = self._validate_response(response)
 
-    # -------------------------------------------------
+        self._print_summary(context.code_response)
+
+        return context
+
+    # ==========================================================
     # Prompt Builder
-    # -------------------------------------------------
+    # ==========================================================
 
     def _build_prompt(
         self,
-        plan: Plan,
-        repository: RepositoryContext,
+        context: AgentContext,
     ) -> str:
+        """
+        Construct the prompt sent to the LLM.
+        """
+
+        plan = context.plan
+        repository = context.repository_context
 
         sections = []
 
@@ -98,8 +108,72 @@ FILE: {path}
 ==================================================
 
 {content}
-
 """
             )
 
         return "\n".join(sections)
+
+    # ==========================================================
+    # LLM
+    # ==========================================================
+
+    def _generate_code(
+        self,
+        prompt: str,
+    ) -> dict:
+        """
+        Generate code using the configured LLM.
+        """
+
+        try:
+
+            return llm.chat_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.1,
+            )
+
+        except Exception as e:
+
+            raise RuntimeError(
+                f"Code generation failed: {e}"
+            ) from e
+
+    # ==========================================================
+    # Validation
+    # ==========================================================
+
+    def _validate_response(
+        self,
+        response: dict,
+    ) -> CodeResponse:
+        """
+        Validate the LLM response.
+        """
+
+        try:
+
+            return CodeResponse.model_validate(response)
+
+        except Exception as e:
+
+            raise RuntimeError(
+                f"Invalid code generation response: {e}"
+            ) from e
+
+    # ==========================================================
+    # Console Output
+    # ==========================================================
+
+    def _print_header(self) -> None:
+
+        print("\n" + "=" * 70)
+        print("💻 Code Generator")
+        print("=" * 70)
+
+    def _print_summary(
+        self,
+        code: CodeResponse,
+    ) -> None:
+
+        print(f"✅ Generated {len(code.files)} file(s).")
