@@ -8,24 +8,43 @@ Every pipeline stage reads from and writes
 to this object.
 """
 
+
 from __future__ import annotations
+
 
 from pydantic import BaseModel, Field
 
+
 from core.models import (
+
+    AgentSession,
+
     ApiTestResult,
+
     BuildResult,
+
     CodeResponse,
+
     DependencyReport,
+
     EngineeringReport,
+
     ExecutionResult,
+
     Plan,
+
     RepositoryContext,
+
     RepositoryInfo,
+
     RootCause,
+
     RuntimeResult,
+
     Summary,
+
 )
+
 
 
 class AgentContext(BaseModel):
@@ -36,11 +55,21 @@ class AgentContext(BaseModel):
     """
 
 
+
+    # ==========================================================
+    # Session
+    # ==========================================================
+
+    session: AgentSession | None = None
+
+
+
     # ==========================================================
     # User Input
     # ==========================================================
 
     user_request: str
+
 
 
     # ==========================================================
@@ -50,11 +79,13 @@ class AgentContext(BaseModel):
     repository_info: RepositoryInfo | None = None
 
 
+
     # ==========================================================
     # Planning
     # ==========================================================
 
     plan: Plan | None = None
+
 
 
     # ==========================================================
@@ -64,11 +95,13 @@ class AgentContext(BaseModel):
     repository_context: RepositoryContext | None = None
 
 
+
     # ==========================================================
     # Code Generation
     # ==========================================================
 
     code_response: CodeResponse | None = None
+
 
 
     # ==========================================================
@@ -78,11 +111,16 @@ class AgentContext(BaseModel):
     execution_result: ExecutionResult | None = None
 
 
+    environment_result: object | None = None
+
+
+
     # ==========================================================
     # Summary
     # ==========================================================
 
     summary: Summary | None = None
+
 
 
     # ==========================================================
@@ -91,20 +129,22 @@ class AgentContext(BaseModel):
 
     dependency_report: DependencyReport | None = None
 
+
     build_result: BuildResult | None = None
+
 
     runtime_result: RuntimeResult | None = None
 
+
     api_test_result: ApiTestResult | None = None
+
 
     root_cause: RootCause | None = None
 
-    # Verification Engine final result.
-    #
-    # Stored as object because VerificationResult
-    # belongs to verification/models and importing
-    # it here can create circular dependencies.
+
+
     verification_result: object | None = None
+
 
 
     # ==========================================================
@@ -114,6 +154,7 @@ class AgentContext(BaseModel):
     engineering_report: EngineeringReport | None = None
 
 
+
     # ==========================================================
     # Metadata
     # ==========================================================
@@ -121,6 +162,7 @@ class AgentContext(BaseModel):
     warnings: list[str] = Field(
         default_factory=list
     )
+
 
     errors: list[str] = Field(
         default_factory=list

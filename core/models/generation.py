@@ -40,8 +40,13 @@ class ProviderType(StrEnum):
     """
 
     OPENAI = "openai"
+
     ANTHROPIC = "anthropic"
+
     OLLAMA = "ollama"
+
+    CEREBRAS = "cerebras"
+
     MOCK = "mock"
 
 

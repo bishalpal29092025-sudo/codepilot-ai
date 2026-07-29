@@ -24,6 +24,16 @@ from execution.sandbox.sandbox import Sandbox
 class Executor:
     """
     Main execution orchestrator.
+
+    Responsibilities:
+
+    - Prepare environment
+    - Execute generated commands
+    - Collect execution results
+    - Store result inside AgentContext
+
+    Pipeline compatible:
+        run(context) -> context
     """
 
     def __init__(
@@ -45,7 +55,76 @@ class Executor:
 
 
     # ==========================================================
-    # Public API
+    # Pipeline API
+    # ==========================================================
+
+    def run(
+        self,
+        context: AgentContext,
+    ) -> AgentContext:
+        """
+        Pipeline entry point.
+
+        Executes generated project commands
+        and stores result in context.
+        """
+
+        commands = self._get_commands(
+            context
+        )
+
+
+        result = self.execute(
+            context,
+            commands,
+        )
+
+
+        context.execution_result = result
+
+
+        return context
+
+
+    # ==========================================================
+    # Command Selection
+    # ==========================================================
+
+    def _get_commands(
+        self,
+        context: AgentContext,
+    ) -> list[str]:
+        """
+        Decide which commands should be executed.
+        """
+
+        commands = []
+
+
+        if context.dependency_report:
+
+            if (
+                context.dependency_report.build_command
+            ):
+                commands.append(
+                    context.dependency_report.build_command
+                )
+
+
+        # fallback for demo projects
+
+        if not commands:
+
+            commands.append(
+                "npm run build"
+            )
+
+
+        return commands
+
+
+    # ==========================================================
+    # Execution Engine
     # ==========================================================
 
     def execute(
@@ -65,20 +144,12 @@ class Executor:
 
         try:
 
-            # Prepare environment
-
-            context = (
-                self.environment.prepare(
-                    context
-                )
+            self.environment.prepare(
+                context
             )
 
 
-            # Create sandbox
-
-            workspace = (
-                self.sandbox.create()
-            )
+            self.sandbox.create()
 
 
             for command in commands:
@@ -98,14 +169,13 @@ class Executor:
                     break
 
 
-
             success = all(
                 result.success
                 for result in results
             )
 
 
-            execution_result = ExecutionResult(
+            return ExecutionResult(
                 status=(
                     ExecutionStatus.SUCCESS
                     if success
@@ -126,9 +196,6 @@ class Executor:
                     "Execution failed."
                 ),
             )
-
-
-            return execution_result
 
 
         finally:
@@ -165,8 +232,8 @@ class Executor:
         ]
 
 
-    def _print_header(self) -> None:
+    def _print_header(self):
 
         print("\n" + "=" * 70)
-        print("⚡ CodePilot Execution Engine")
+        print("⚡ Runtime Execution Engine")
         print("=" * 70)

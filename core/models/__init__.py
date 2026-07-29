@@ -2,8 +2,16 @@
 Public exports for the CodePilot AI domain models.
 """
 
+
 from .execution import ExecutionResult
-from .generation import CodeResponse, GeneratedFile
+
+
+from .generation import (
+    CodeResponse,
+    GeneratedFile,
+)
+
+
 from .planning import (
     Plan,
     ProjectAnalysis,
@@ -12,9 +20,24 @@ from .planning import (
     Risk,
     Task,
 )
+
+
 from .reading import RepositoryContext
+
+
 from .reporting import Summary
-from .repository import RepositoryInfo
+
+
+from .repository import (
+    RepositoryInfo,
+    ProgrammingLanguage,
+    ProjectType,
+)
+
+
+from .session import AgentSession
+
+
 from .verification import (
     ApiEndpoint,
     ApiTestResult,
@@ -26,25 +49,50 @@ from .verification import (
     RuntimeResult,
 )
 
+
+
 __all__ = [
-    "ApiEndpoint",
-    "ApiTestResult",
-    "BuildResult",
-    "CodeResponse",
-    "DependencyReport",
-    "DiscoveredRoute",
-    "EngineeringReport",
+
+    # Execution
     "ExecutionResult",
+
+
+    # Generation
+    "CodeResponse",
     "GeneratedFile",
-    "Plan",  # Backward compatibility
+
+
+    # Planning
+    "Plan",
     "ProjectAnalysis",
     "ProjectPlan",
     "ProjectRequest",
+    "Risk",
+    "Task",
+
+
+    # Repository
     "RepositoryContext",
     "RepositoryInfo",
-    "Risk",
+    "ProgrammingLanguage",
+    "ProjectType",
+
+
+    # Session
+    "AgentSession",
+
+
+    # Reporting
+    "Summary",
+
+
+    # Verification
+    "ApiEndpoint",
+    "ApiTestResult",
+    "BuildResult",
+    "DependencyReport",
+    "DiscoveredRoute",
+    "EngineeringReport",
     "RootCause",
     "RuntimeResult",
-    "Summary",
-    "Task",
 ]
