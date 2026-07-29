@@ -84,7 +84,7 @@ class Plan(BaseModel):
 
 class RepositoryContext(BaseModel):
     """
-    Source code loaded from the repository.
+   Source code loaded from the repository.
     """
 
     files: Dict[str, str] = Field(
@@ -187,3 +187,155 @@ class Summary(BaseModel):
         default_factory=list,
         description="Additional implementation notes."
     )
+
+
+# ============================================================
+# Verification Models
+# ============================================================
+
+class DependencyReport(BaseModel):
+    """
+    Repository dependency and build configuration.
+    """
+
+    language: str = Field(
+        default="Unknown",
+        description="Detected programming language."
+    )
+
+    framework: str = Field(
+        default="Unknown",
+        description="Detected application framework."
+    )
+
+    package_manager: str = Field(
+        default="Unknown",
+        description="Detected package manager."
+    )
+
+    install_command: str | None = Field(
+        default=None,
+        description="Command used to install project dependencies."
+    )
+
+    build_command: str | None = Field(
+        default=None,
+        description="Command used to build the project."
+    )
+
+    run_command: str | None = Field(
+        default=None,
+        description="Command used to start the project."
+    )
+
+    detected_files: List[str] = Field(
+        default_factory=list,
+        description="Configuration files used during detection."
+    )
+
+    warnings: List[str] = Field(
+        default_factory=list,
+        description="Repository warnings."
+    )
+
+
+class BuildResult(BaseModel):
+    """
+    Result of building the project.
+    """
+
+    success: bool = False
+
+    command: str = ""
+
+    exit_code: int = 0
+
+    logs: str = ""
+
+    errors: List[str] = Field(
+        default_factory=list
+    )
+
+
+class RuntimeResult(BaseModel):
+    """
+    Result of running the application.
+    """
+
+    success: bool = False
+
+    command: str = ""
+
+    logs: str = ""
+
+    errors: List[str] = Field(
+        default_factory=list
+    )
+
+
+class ApiEndpoint(BaseModel):
+    """
+    A discovered API endpoint.
+    """
+
+    method: str
+
+    path: str
+
+    status_code: int | None = None
+
+    passed: bool = False
+
+
+class ApiTestResult(BaseModel):
+    """
+    API testing report.
+    """
+
+    total: int = 0
+
+    passed: int = 0
+
+    failed: int = 0
+
+    endpoints: List[ApiEndpoint] = Field(
+        default_factory=list
+    )
+
+
+class RootCause(BaseModel):
+    """
+    AI-generated root cause analysis.
+    """
+
+    summary: str = ""
+
+    probable_causes: List[str] = Field(
+        default_factory=list
+    )
+
+    suggested_fixes: List[str] = Field(
+        default_factory=list
+    )
+
+    confidence: float = 0.0
+
+
+class EngineeringReport(BaseModel):
+    """
+    Final engineering report produced after the entire pipeline.
+    """
+
+    repository: RepositoryInfo | None = None
+
+    dependency: DependencyReport | None = None
+
+    build: BuildResult | None = None
+
+    runtime: RuntimeResult | None = None
+
+    api: ApiTestResult | None = None
+
+    root_cause: RootCause | None = None
+
+    summary: Summary | None = None

@@ -1,84 +1,92 @@
 from pathlib import Path
 
-from core.models import (
-    CodeResponse,
-    ExecutionResult,
-    Plan,
-    Summary,
-)
+from core.context import AgentContext
+from core.models import Summary
 from llm import llm
+
+PROMPT_PATH = Path("prompts/summary.txt")
 
 
 class Summarizer:
     """
-    Generates a summary of the implementation.
+    Generates a human-readable summary of the completed implementation.
+
+    Responsibilities:
+        - Build the summary prompt
+        - Call the LLM
+        - Validate the response
+        - Store the summary inside AgentContext
+
+    It does NOT:
+        - Generate code
+        - Execute commands
+        - Modify files
+        - Build the project
     """
 
-    def __init__(self):
-
-        prompt_path = Path("prompts/summary.txt")
-
-        self.system_prompt = prompt_path.read_text(
+    def __init__(self) -> None:
+        self.system_prompt = PROMPT_PATH.read_text(
             encoding="utf-8"
         )
 
-    # -------------------------------------------------
-    # Generate Summary
-    # -------------------------------------------------
+    # ==========================================================
+    # Public API
+    # ==========================================================
 
-    def summarize(
+    def run(
         self,
-        plan: Plan,
-        code: CodeResponse,
-        execution: ExecutionResult,
-    ) -> Summary:
+        context: AgentContext,
+    ) -> AgentContext:
+        """
+        Generate the final implementation summary.
+        """
 
-        print("\n" + "=" * 70)
-        print("📋 Summarizer")
-        print("=" * 70)
+        self._print_header()
 
-        user_prompt = self._build_prompt(
-            plan,
-            code,
-            execution,
-        )
+        prompt = self._build_prompt(context)
 
-        response = llm.chat_json(
-            system_prompt=self.system_prompt,
-            user_prompt=user_prompt,
-            temperature=0.2,
-        )
+        response = self._generate_summary(prompt)
 
-        summary = Summary.model_validate(response)
+        context.summary = self._validate_summary(response)
 
-        print("✅ Summary generated.")
+        self._print_summary()
 
-        return summary
+        return context
 
-    # -------------------------------------------------
+    # ==========================================================
     # Prompt Builder
-    # -------------------------------------------------
+    # ==========================================================
 
     def _build_prompt(
         self,
-        plan: Plan,
-        code: CodeResponse,
-        execution: ExecutionResult,
+        context: AgentContext,
     ) -> str:
+        """
+        Construct the prompt sent to the LLM.
+        """
 
-        files = "\n".join(
+        plan = context.plan
+        code = context.code_response
+        execution = context.execution_result
+
+        generated_files = "\n".join(
             f"- {file.path}"
             for file in code.files
         )
 
-        written = "\n".join(
+        written_files = "\n".join(
             f"- {file}"
             for file in execution.written_files
         )
 
-        failed = "\n".join(
+        failed_files = "\n".join(
             f"- {file}"
             for file in execution.failed_files
+        )
+
+        implementation_steps = "\n".join(
+            f"- {step}"
+            for step in plan.implementation_steps
         )
 
         return f"""
@@ -86,27 +94,90 @@ Goal
 
 {plan.goal}
 
-----------------------------------------
+--------------------------------------------------
 
 Implementation Steps
 
-{chr(10).join("- " + step for step in plan.implementation_steps)}
+{implementation_steps}
 
-----------------------------------------
+--------------------------------------------------
 
 Generated Files
 
-{files}
+{generated_files}
 
-----------------------------------------
+--------------------------------------------------
 
 Successfully Written
 
-{written if written else "None"}
+{written_files if written_files else "None"}
 
-----------------------------------------
+--------------------------------------------------
 
 Failed Writes
 
-{failed if failed else "None"}
+{failed_files if failed_files else "None"}
 """
+
+    # ==========================================================
+    # LLM
+    # ==========================================================
+
+    def _generate_summary(
+        self,
+        prompt: str,
+    ) -> dict:
+        """
+        Generate a summary using the configured LLM.
+        """
+
+        try:
+
+            return llm.chat_json(
+                system_prompt=self.system_prompt,
+                user_prompt=prompt,
+                temperature=0.2,
+            )
+
+        except Exception as e:
+
+            raise RuntimeError(
+                f"Summary generation failed: {e}"
+            ) from e
+
+    # ==========================================================
+    # Validation
+    # ==========================================================
+
+    def _validate_summary(
+        self,
+        response: dict,
+    ) -> Summary:
+        """
+        Validate the LLM response.
+        """
+
+        try:
+
+            return Summary.model_validate(response)
+
+        except Exception as e:
+
+            raise RuntimeError(
+                f"Invalid summary response: {e}"
+            ) from e
+
+    # ==========================================================
+    # Console Output
+    # ==========================================================
+
+    def _print_header(self) -> None:
+
+        print("\n" + "=" * 70)
+        print("📋 Summarizer")
+        print("=" * 70)
+
+    @staticmethod
+    def _print_summary() -> None:
+
+        print("✅ Summary generated.")

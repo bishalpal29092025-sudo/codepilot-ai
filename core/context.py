@@ -1,27 +1,94 @@
-from dataclasses import dataclass
-from typing import Optional
+from pydantic import BaseModel, Field
 
 from core.models import (
+    ApiTestResult,
+    BuildResult,
+    CodeResponse,
+    DependencyReport,
+    EngineeringReport,
+    ExecutionResult,
     Plan,
     RepositoryContext,
-    CodeResponse,
-    ExecutionResult,
+    RepositoryInfo,
+    RootCause,
+    RuntimeResult,
     Summary,
 )
 
 
-@dataclass
-class AgentContext:
+class AgentContext(BaseModel):
+    """
+    Shared state passed through the entire CodePilot AI pipeline.
+
+    Each pipeline stage reads from and writes to this object.
+    """
+
+    # ==========================================================
+    # User Input
+    # ==========================================================
+
     user_request: str
 
-    repository_info: Optional[dict] = None
+    # ==========================================================
+    # Repository Analysis
+    # ==========================================================
 
-    plan: Optional[Plan] = None
+    repository_info: RepositoryInfo | None = None
 
-    repository_context: Optional[RepositoryContext] = None
+    # ==========================================================
+    # Planning
+    # ==========================================================
 
-    generated_code: Optional[CodeResponse] = None
+    plan: Plan | None = None
 
-    execution_result: Optional[ExecutionResult] = None
+    # ==========================================================
+    # Repository Reader
+    # ==========================================================
 
-    summary: Optional[Summary] = None
+    repository_context: RepositoryContext | None = None
+
+    # ==========================================================
+    # Code Generation
+    # ==========================================================
+
+    code_response: CodeResponse | None = None
+
+    # ==========================================================
+    # Execution
+    # ==========================================================
+
+    execution_result: ExecutionResult | None = None
+
+    # ==========================================================
+    # Summary
+    # ==========================================================
+
+    summary: Summary | None = None
+
+    # ==========================================================
+    # Verification
+    # ==========================================================
+
+    dependency_report: DependencyReport | None = None
+
+    build_result: BuildResult | None = None
+
+    runtime_result: RuntimeResult | None = None
+
+    api_test_result: ApiTestResult | None = None
+
+    root_cause: RootCause | None = None
+
+    # ==========================================================
+    # Final Report
+    # ==========================================================
+
+    engineering_report: EngineeringReport | None = None
+
+    # ==========================================================
+    # Metadata
+    # ==========================================================
+
+    warnings: list[str] = Field(default_factory=list)
+
+    errors: list[str] = Field(default_factory=list)
