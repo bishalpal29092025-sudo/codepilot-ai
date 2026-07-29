@@ -1,11 +1,13 @@
 import json
 import os
 
+from core.models import RepositoryInfo
+
 
 class RepositoryExplorer:
     """
     Explores a repository and extracts metadata required
-    by the AI Coding Agent.
+    by CodePilot AI.
     """
 
     IGNORE_DIRS = {
@@ -50,19 +52,16 @@ class RepositoryExplorer:
         self.database = "Unknown"
         self.package_manager = "Unknown"
 
-        self.files = []
+        self.files: list[str] = []
 
         self.scan()
         self.detect_project()
 
-    # ----------------------------------------
-    # Repository Scan
-    # ----------------------------------------
+    # =========================================================
+    # Scan Repository
+    # =========================================================
 
     def scan(self):
-        """
-        Scan the repository recursively.
-        """
 
         self.files.clear()
 
@@ -97,14 +96,11 @@ class RepositoryExplorer:
 
         self.files.sort()
 
-    # ----------------------------------------
-    # Project Detection
-    # ----------------------------------------
+    # =========================================================
+    # Detect Project
+    # =========================================================
 
     def detect_project(self):
-        """
-        Detect language, framework and database.
-        """
 
         package_json = os.path.join(
             self.repo_path,
@@ -117,11 +113,13 @@ class RepositoryExplorer:
             self.package_manager = "npm"
 
             try:
+
                 with open(
                     package_json,
                     "r",
                     encoding="utf-8",
                 ) as f:
+
                     package = json.load(f)
 
                 dependencies = {}
@@ -152,9 +150,9 @@ class RepositoryExplorer:
             self.language = "Python"
             self.package_manager = "pip"
 
-    # ----------------------------------------
+    # =========================================================
     # Framework Detection
-    # ----------------------------------------
+    # =========================================================
 
     def detect_framework(self, dependencies):
 
@@ -176,9 +174,9 @@ class RepositoryExplorer:
                 self.framework = framework
                 return
 
-    # ----------------------------------------
+    # =========================================================
     # Database Detection
-    # ----------------------------------------
+    # =========================================================
 
     def detect_database(self, dependencies):
 
@@ -197,43 +195,46 @@ class RepositoryExplorer:
                 self.database = database
                 return
 
-    # ----------------------------------------
-    # Context
-    # ----------------------------------------
+    # =========================================================
+    # Repository Info
+    # =========================================================
 
+    def get_repository_info(self) -> RepositoryInfo:
+
+        return RepositoryInfo(
+            language=self.language,
+            framework=self.framework,
+            database=self.database,
+            package_manager=self.package_manager,
+            files=self.files,
+            total_files=len(self.files),
+        )
+
+    # Backward compatibility
     def get_context(self):
-        """
-        Return repository metadata.
-        """
+        return self.get_repository_info()
 
-        return {
-            "language": self.language,
-            "framework": self.framework,
-            "database": self.database,
-            "package_manager": self.package_manager,
-            "files": self.files,
-            "total_files": len(self.files),
-        }
-
-    # ----------------------------------------
+    # =========================================================
     # Pretty Summary
-    # ----------------------------------------
+    # =========================================================
 
     def summary(self):
+
+        info = self.get_repository_info()
 
         print("=" * 60)
         print("Repository Analysis")
         print("=" * 60)
 
-        print(f"Language          : {self.language}")
-        print(f"Framework         : {self.framework}")
-        print(f"Database          : {self.database}")
-        print(f"Package Manager   : {self.package_manager}")
+        print(f"Language          : {info.language}")
+        print(f"Framework         : {info.framework}")
+        print(f"Database          : {info.database}")
+        print(f"Package Manager   : {info.package_manager}")
 
         print("\nImportant Files")
         print("-" * 60)
 
-        for file in self.files:
+        for file in info.files:
             print(f"✓ {file}")
 
-        print(f"\nTotal Files: {len(self.files)}")
+        print(f"\nTotal Files: {info.total_files}")

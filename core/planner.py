@@ -1,12 +1,14 @@
 from pathlib import Path
 
+from core.context import AgentContext
 from core.models import Plan
 from llm import llm
 
 
 class Planner:
     """
-    Generates a structured implementation plan.
+    Generates a structured implementation plan
+    and stores it inside AgentContext.
     """
 
     def __init__(self):
@@ -16,33 +18,40 @@ class Planner:
             encoding="utf-8"
         )
 
-    def create_plan(
+    # -------------------------------------------------
+    # Main Entry
+    # -------------------------------------------------
+
+    def run(
         self,
-        repository_context: str,
-        repository_files: str,
-        user_request: str,
-    ) -> Plan:
+        context: AgentContext,
+    ) -> AgentContext:
 
         print("\n" + "=" * 70)
         print("🧠 Planner")
         print("=" * 70)
 
+        repository = context.repository_info
+
         user_prompt = f"""
-Repository Context:
+Repository Context
 
-{repository_context}
+Language: {repository.language}
+Framework: {repository.framework}
+Database: {repository.database}
+Package Manager: {repository.package_manager}
 
-----------------------------------------
+--------------------------------------------------
 
-Repository Files:
+Repository Files
 
-{repository_files}
+{chr(10).join(repository.files)}
 
-----------------------------------------
+--------------------------------------------------
 
-User Request:
+User Request
 
-{user_request}
+{context.user_request}
 """
 
         response = llm.chat_json(
@@ -50,10 +59,10 @@ User Request:
             user_prompt=user_prompt,
         )
 
-        plan = Plan.model_validate(response)
+        context.plan = Plan.model_validate(response)
 
         print("✅ Plan generated.")
-        print(f"Goal : {plan.goal}")
-        print(f"Files: {len(plan.relevant_files)}")
+        print(f"Goal : {context.plan.goal}")
+        print(f"Files: {len(context.plan.relevant_files)}")
 
-        return plan
+        return context

@@ -4,6 +4,46 @@ from pydantic import BaseModel, Field
 
 
 # ============================================================
+# Repository Models
+# ============================================================
+
+class RepositoryInfo(BaseModel):
+    """
+    Metadata about the repository discovered during exploration.
+    """
+
+    language: str = Field(
+        default="Unknown",
+        description="Primary programming language."
+    )
+
+    framework: str = Field(
+        default="Unknown",
+        description="Detected framework."
+    )
+
+    database: str = Field(
+        default="Unknown",
+        description="Detected database."
+    )
+
+    package_manager: str = Field(
+        default="Unknown",
+        description="Detected package manager."
+    )
+
+    files: List[str] = Field(
+        default_factory=list,
+        description="Important repository files."
+    )
+
+    total_files: int = Field(
+        default=0,
+        description="Total number of scanned files."
+    )
+
+
+# ============================================================
 # Planner Models
 # ============================================================
 
@@ -64,7 +104,7 @@ class RepositoryContext(BaseModel):
 
     skipped_files: List[str] = Field(
         default_factory=list,
-        description="Binary, unreadable, or oversized files."
+        description="Binary, unreadable or oversized files."
     )
 
 
@@ -74,7 +114,7 @@ class RepositoryContext(BaseModel):
 
 class GeneratedFile(BaseModel):
     """
-    A single generated or modified file.
+    A generated or modified file.
     """
 
     path: str = Field(
@@ -105,7 +145,7 @@ class CodeResponse(BaseModel):
 
 class ExecutionResult(BaseModel):
     """
-    Result after writing generated files to disk.
+    Result after writing generated files.
     """
 
     written_files: List[str] = Field(
@@ -147,65 +187,3 @@ class Summary(BaseModel):
         default_factory=list,
         description="Additional implementation notes."
     )
-
-
-class GeneratedFile(BaseModel):
-    """
-    A single generated or modified file.
-    """
-
-    path: str = Field(
-        ...,
-        description="Repository-relative file path."
-    )
-
-    content: str = Field(
-        ...,
-        description="Complete file contents."
-    )
-
-
-class CodeResponse(BaseModel):
-    """
-    Response produced by the coding model.
-    """
-
-    files: List[GeneratedFile] = Field(
-        default_factory=list
-    )
-
-
-class ExecutionResult(BaseModel):
-    """
-    Result after writing files.
-    """
-
-    written_files: List[str] = Field(
-        default_factory=list
-    )
-
-    failed_files: List[str] = Field(
-        default_factory=list
-    )
-
-
-class Summary(BaseModel):
-    """
-    Final execution summary.
-    """
-
-    files_changed: List[str] = Field(
-        default_factory=list
-    )
-
-    features_added: List[str] = Field(
-        default_factory=list
-    )
-
-    testing: List[str] = Field(
-        default_factory=list
-    )
-
-    notes: List[str] = Field(
-        default_factory=list
-    )    
