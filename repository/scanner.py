@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 class RepositoryScanner:
     """
-    Traverses a repository and returns relevant files.
+    Traverse a repository and collect relevant files.
 
     This class is responsible only for filesystem traversal.
     It performs no framework or language detection.
@@ -49,6 +49,11 @@ class RepositoryScanner:
                 f"Repository not found: {self.repository_path}"
             )
 
+        if not self.repository_path.is_dir():
+            raise RepositoryScanError(
+                f"Repository path is not a directory: {self.repository_path}"
+            )
+
         collected_files: list[str] = []
 
         try:
@@ -62,6 +67,7 @@ class RepositoryScanner:
 
                 for filename in files:
 
+                    # Ignore hidden files unless explicitly allowed.
                     if (
                         filename.startswith(".")
                         and filename not in ALLOWED_HIDDEN_FILES
@@ -70,6 +76,7 @@ class RepositoryScanner:
 
                     extension = Path(filename).suffix
 
+                    # Ignore unsupported files unless they are marked important.
                     if (
                         extension not in SUPPORTED_EXTENSIONS
                         and filename not in IMPORTANT_FILES

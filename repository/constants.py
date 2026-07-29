@@ -7,7 +7,10 @@ analysing repositories.
 
 from __future__ import annotations
 
+# ----------------------------------------------------------------------
 # Directories ignored during repository traversal.
+# ----------------------------------------------------------------------
+
 IGNORE_DIRECTORIES: set[str] = {
     ".git",
     ".idea",
@@ -23,14 +26,25 @@ IGNORE_DIRECTORIES: set[str] = {
     "coverage",
 }
 
-# Hidden files that should still be scanned.
+# ----------------------------------------------------------------------
+# Hidden files that are allowed to be scanned.
+#
+# These files are not ignored simply because they begin with ".".
+# They must still pass the IMPORTANT_FILES or extension checks.
+# ----------------------------------------------------------------------
+
 ALLOWED_HIDDEN_FILES: set[str] = {
     ".env",
     ".env.example",
     ".gitignore",
+    ".gitattributes",
+    ".editorconfig",
 }
 
+# ----------------------------------------------------------------------
 # Files considered important regardless of extension.
+# ----------------------------------------------------------------------
+
 IMPORTANT_FILES: set[str] = {
     "package.json",
     "package-lock.json",
@@ -42,9 +56,15 @@ IMPORTANT_FILES: set[str] = {
     "Cargo.toml",
     "go.mod",
     "README.md",
+    ".gitignore",
+    ".gitattributes",
+    ".editorconfig",
 }
 
+# ----------------------------------------------------------------------
 # Extensions worth indexing.
+# ----------------------------------------------------------------------
+
 SUPPORTED_EXTENSIONS: set[str] = {
     ".py",
     ".js",
@@ -62,6 +82,25 @@ SUPPORTED_EXTENSIONS: set[str] = {
     ".sql",
 }
 
+# ----------------------------------------------------------------------
+# Programming language detection.
+# ----------------------------------------------------------------------
+
+LANGUAGE_EXTENSIONS: dict[str, str] = {
+    ".py": "Python",
+    ".js": "JavaScript",
+    ".jsx": "JavaScript",
+    ".ts": "TypeScript",
+    ".tsx": "TypeScript",
+    ".java": "Java",
+    ".go": "Go",
+    ".rs": "Rust",
+}
+
+# ----------------------------------------------------------------------
+# Framework detection.
+# ----------------------------------------------------------------------
+
 FRAMEWORK_MAP: dict[str, str] = {
     "next": "Next.js",
     "react": "React",
@@ -74,6 +113,10 @@ FRAMEWORK_MAP: dict[str, str] = {
     "fastapi": "FastAPI",
 }
 
+# ----------------------------------------------------------------------
+# Database detection.
+# ----------------------------------------------------------------------
+
 DATABASE_MAP: dict[str, str] = {
     "mongoose": "MongoDB",
     "mongodb": "MongoDB",
@@ -81,4 +124,19 @@ DATABASE_MAP: dict[str, str] = {
     "mysql2": "MySQL",
     "sqlite3": "SQLite",
     "prisma": "Prisma",
+}
+
+# ----------------------------------------------------------------------
+# Package manager detection.
+# ----------------------------------------------------------------------
+
+PACKAGE_MANAGER_FILES: dict[str, str] = {
+    "package-lock.json": "npm",
+    "pnpm-lock.yaml": "pnpm",
+    "yarn.lock": "yarn",
+    "requirements.txt": "pip",
+    "pyproject.toml": "poetry",
+    "poetry.lock": "poetry",
+    "Cargo.toml": "cargo",
+    "go.mod": "go",
 }
