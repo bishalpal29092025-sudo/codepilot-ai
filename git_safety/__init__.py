@@ -7,6 +7,10 @@ from .snapshot import (
     SnapshotManager,
 )
 
+from .diff import (
+    DiffEngine,
+)
+
 from .exceptions import (
     GitError,
     GitCommandError,
@@ -20,13 +24,22 @@ from .models import (
     DiffReport,
 )
 
+
 __all__ = [
+    # Snapshot
     "GitSnapshot",
     "SnapshotManager",
+
+    # Diff Engine
+    "DiffEngine",
+
+    # Exceptions
     "GitError",
     "GitCommandError",
     "NotAGitRepositoryError",
     "SnapshotError",
+
+    # Models
     "ChangeType",
     "DiffEntry",
     "DiffReport",
