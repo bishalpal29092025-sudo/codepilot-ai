@@ -14,13 +14,20 @@ from .exceptions import (
     SnapshotError,
 )
 
+from .models import (
+    ChangeType,
+    DiffEntry,
+    DiffReport,
+)
 
 __all__ = [
     "GitSnapshot",
     "SnapshotManager",
-
     "GitError",
     "GitCommandError",
     "NotAGitRepositoryError",
     "SnapshotError",
+    "ChangeType",
+    "DiffEntry",
+    "DiffReport",
 ]
