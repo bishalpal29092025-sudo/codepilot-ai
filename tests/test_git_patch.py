@@ -1,3 +1,5 @@
+from pathlib import Path
+
 from git_safety import (
     PatchEngine,
     PatchOperation,
@@ -5,6 +7,14 @@ from git_safety import (
 
 
 def test_create_patch():
+
+    file_path = Path(
+        "test_patch_file.txt"
+    )
+
+    if file_path.exists():
+        file_path.unlink()
+
 
     engine = PatchEngine(".")
 
@@ -22,7 +32,17 @@ def test_create_patch():
     )
 
 
+
 def test_apply_patch():
+
+    file_path = Path(
+        "test_patch_file.txt"
+    )
+
+
+    if file_path.exists():
+        file_path.unlink()
+
 
     engine = PatchEngine(".")
 
@@ -38,13 +58,12 @@ def test_apply_patch():
     )
 
 
-    with open(
-        "test_patch_file.txt",
-        "r",
-        encoding="utf-8",
-    ) as file:
+    assert (
+        file_path.read_text(
+            encoding="utf-8"
+        )
+        == "hello CodePilot"
+    )
 
-        content = file.read()
 
-
-    assert content == "hello CodePilot"
+    file_path.unlink()

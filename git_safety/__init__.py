@@ -20,6 +20,12 @@ from .patch import (
 )
 
 
+from .rollback import (
+    RollbackEngine,
+    RollbackError,
+)
+
+
 from .exceptions import (
     GitError,
     GitCommandError,
@@ -32,9 +38,12 @@ from .models import (
     ChangeType,
     DiffEntry,
     DiffReport,
+
     PatchOperation,
     FilePatch,
     PatchSet,
+
+    RollbackResult,
 )
 
 
@@ -59,6 +68,12 @@ __all__ = [
     "PatchOperation",
     "FilePatch",
     "PatchSet",
+
+
+    # Rollback
+    "RollbackEngine",
+    "RollbackError",
+    "RollbackResult",
 
 
     # Exceptions

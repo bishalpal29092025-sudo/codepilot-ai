@@ -7,7 +7,9 @@ modifies a repository.
 
 from __future__ import annotations
 
+import shutil
 import subprocess
+import tempfile
 
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -16,7 +18,6 @@ from pathlib import Path
 from .exceptions import (
     GitCommandError,
     NotAGitRepositoryError,
-    SnapshotError,
 )
 
 
@@ -28,13 +29,19 @@ from .exceptions import (
 @dataclass(frozen=True)
 class GitSnapshot:
     """
-    Represents repository state at a point in time.
+    Represents repository state.
     """
 
     repository_path: str
+
     commit_hash: str
+
     branch: str
+
     is_clean: bool
+
+    backup_path: str
+
     created_at: datetime
 
 
@@ -49,6 +56,7 @@ class SnapshotManager:
     Creates and manages repository snapshots.
     """
 
+
     def __init__(
         self,
         repository_path: str,
@@ -57,6 +65,7 @@ class SnapshotManager:
         self.repository_path = Path(
             repository_path
         ).resolve()
+
 
 
     # ======================================================
@@ -83,8 +92,48 @@ class SnapshotManager:
 
             is_clean=self._is_clean(),
 
-            created_at=datetime.now(timezone.utc),
+            backup_path=self._create_backup(),
+
+            created_at=datetime.now(
+                timezone.utc
+            ),
+
         )
+
+
+
+    # ======================================================
+    # Backup
+    # ======================================================
+
+    def _create_backup(self) -> str:
+        """
+        Create complete repository backup.
+
+        Excludes .git directory.
+        """
+
+        backup_dir = tempfile.mkdtemp(
+            prefix="codepilot_snapshot_"
+        )
+
+
+        shutil.copytree(
+
+            self.repository_path,
+
+            backup_dir,
+
+            dirs_exist_ok=True,
+
+            ignore=shutil.ignore_patterns(
+                ".git"
+            ),
+        )
+
+
+        return backup_dir
+
 
 
     # ======================================================
@@ -92,11 +141,9 @@ class SnapshotManager:
     # ======================================================
 
     def _validate_repository(self) -> None:
-        """
-        Ensure directory is a git repository.
-        """
 
         result = subprocess.run(
+
             [
                 "git",
                 "rev-parse",
@@ -118,6 +165,7 @@ class SnapshotManager:
             )
 
 
+
     def _current_commit(self) -> str:
 
         return self._run_git(
@@ -127,6 +175,7 @@ class SnapshotManager:
                 "HEAD",
             ]
         )
+
 
 
     def _current_branch(self) -> str:
@@ -140,9 +189,11 @@ class SnapshotManager:
         )
 
 
+
     def _is_clean(self) -> bool:
 
         result = subprocess.run(
+
             [
                 "git",
                 "status",
@@ -160,13 +211,11 @@ class SnapshotManager:
         return result.stdout.strip() == ""
 
 
+
     def _run_git(
         self,
         command: list[str],
     ) -> str:
-        """
-        Execute git command safely.
-        """
 
         result = subprocess.run(
 

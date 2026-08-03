@@ -1,6 +1,9 @@
 """
 Git Safety Models.
+
+Public exports for Git Safety data structures.
 """
+
 
 from .patch import (
     PatchOperation,
@@ -8,11 +11,18 @@ from .patch import (
     PatchSet,
 )
 
+
 from .diff import (
     ChangeType,
     DiffEntry,
     DiffReport,
 )
+
+
+from .rollback import (
+    RollbackResult,
+)
+
 
 
 __all__ = [
@@ -22,9 +32,14 @@ __all__ = [
     "FilePatch",
     "PatchSet",
 
+
     # Diff Models
     "ChangeType",
     "DiffEntry",
     "DiffReport",
+
+
+    # Rollback Models
+    "RollbackResult",
 
 ]
