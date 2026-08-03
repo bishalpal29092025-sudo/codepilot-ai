@@ -2,6 +2,13 @@
 Git Diff Engine.
 
 Analyzes repository changes after CodePilot modifications.
+
+Responsibilities:
+- Detect changed files
+- Detect new files
+- Detect deleted files
+- Count additions/deletions
+- Generate DiffReport
 """
 
 from __future__ import annotations
@@ -37,37 +44,60 @@ class DiffEngine:
 
     def generate_diff(self) -> DiffReport:
         """
-        Generate repository diff report.
+        Generate complete repository diff report.
         """
 
-        changes = self._get_file_changes()
+        files: list[DiffEntry] = []
 
-        stats = self._get_stats()
+
+        # Tracked file changes
+        files.extend(
+            self._get_tracked_changes()
+        )
+
+
+        # New untracked files
+        files.extend(
+            self._get_untracked_files()
+        )
+
 
         return DiffReport(
-            files=changes,
-            total_additions=stats["additions"],
-            total_deletions=stats["deletions"],
+            files=files,
+
+            total_additions=sum(
+                file.additions
+                for file in files
+            ),
+
+            total_deletions=sum(
+                file.deletions
+                for file in files
+            ),
         )
 
 
     # ==========================================================
-    # Git Commands
+    # Tracked Changes
     # ==========================================================
 
-    def _get_file_changes(self) -> list[DiffEntry]:
+    def _get_tracked_changes(self) -> list[DiffEntry]:
         """
-        Parse git diff --name-status output.
+        Detect modified, added and deleted tracked files.
         """
 
         result = subprocess.run(
             [
                 "git",
                 "diff",
+                "--numstat",
                 "--name-status",
             ],
+
             cwd=self.repository_path,
+
             capture_output=True,
+
             text=True,
         )
 
@@ -76,7 +106,7 @@ class DiffEngine:
             return []
 
 
-        entries = []
+        entries: list[DiffEntry] = []
 
 
         for line in result.stdout.splitlines():
@@ -85,36 +115,44 @@ class DiffEngine:
                 continue
 
 
-            parts = line.split(
-                "\t"
+            parts = line.split("\t")
+
+
+            if len(parts) < 3:
+                continue
+
+
+            additions = self._parse_number(
+                parts[0]
+            )
+
+            deletions = self._parse_number(
+                parts[1]
             )
 
 
-            status = parts[0]
+            status = parts[2][0]
 
             path = parts[-1]
 
 
-            if status == "A":
+            change_type = (
+                ChangeType.ADDED
+                if status == "A"
 
-                change_type = ChangeType.ADDED
+                else ChangeType.DELETED
+                if status == "D"
 
-
-            elif status == "D":
-
-                change_type = ChangeType.DELETED
-
-
-            else:
-
-                change_type = ChangeType.MODIFIED
-
+                else ChangeType.MODIFIED
+            )
 
 
             entries.append(
                 DiffEntry(
                     path=path,
                     change_type=change_type,
+                    additions=additions,
+                    deletions=deletions,
                 )
             )
 
@@ -123,16 +161,23 @@ class DiffEngine:
 
 
 
-    def _get_stats(self) -> dict[str, int]:
+    # ==========================================================
+    # Untracked Files
+    # ==========================================================
+
+    def _get_untracked_files(self) -> list[DiffEntry]:
         """
-        Get insertion/deletion statistics.
+        Detect new files created by CodePilot.
+
+        Example:
+            ?? new_file.py
         """
 
         result = subprocess.run(
             [
                 "git",
-                "diff",
-                "--stat",
+                "status",
+                "--short",
             ],
 
             cwd=self.repository_path,
@@ -143,48 +188,94 @@ class DiffEngine:
         )
 
 
-        additions = 0
-        deletions = 0
+        if result.returncode != 0:
+            return []
 
 
-        if not result.stdout:
-            return {
-                "additions": 0,
-                "deletions": 0,
-            }
+        entries: list[DiffEntry] = []
 
 
         for line in result.stdout.splitlines():
 
-            if "insertion" in line:
-
-                parts = line.split(",")
-
-                for part in parts:
-
-                    if "insertion" in part:
-
-                        additions = int(
-                            part.strip()
-                            .split()[0]
-                        )
+            if not line.startswith(
+                "??"
+            ):
+                continue
 
 
-            if "deletion" in line:
-
-                parts = line.split(",")
-
-                for part in parts:
-
-                    if "deletion" in part:
-
-                        deletions = int(
-                            part.strip()
-                            .split()[0]
-                        )
+            path = line[3:]
 
 
-        return {
-            "additions": additions,
-            "deletions": deletions,
-        }
+            additions = self._count_file_lines(
+                path
+            )
+
+
+            entries.append(
+                DiffEntry(
+                    path=path,
+                    change_type=ChangeType.ADDED,
+                    additions=additions,
+                    deletions=0,
+                )
+            )
+
+
+        return entries
+
+
+
+    # ==========================================================
+    # Helpers
+    # ==========================================================
+
+    @staticmethod
+    def _parse_number(
+        value: str,
+    ) -> int:
+        """
+        Convert git numstat values.
+
+        Binary files return '-'.
+        """
+
+        if value == "-":
+            return 0
+
+
+        return int(value)
+
+
+
+    def _count_file_lines(
+        self,
+        relative_path: str,
+    ) -> int:
+        """
+        Count lines for newly created files.
+        """
+
+        file_path = (
+            self.repository_path
+            / relative_path
+        )
+
+
+        if not file_path.exists():
+            return 0
+
+
+        try:
+
+            with file_path.open(
+                "r",
+                encoding="utf-8",
+            ) as file:
+
+                return len(
+                    file.readlines()
+                )
+
+        except Exception:
+
+            return 0
